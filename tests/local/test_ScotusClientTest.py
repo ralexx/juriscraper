@@ -81,17 +81,36 @@ class ScotusClientTest(unittest.TestCase):
             ),
             "rb",
         ) as _html:
-            self.not_found_page = _html.read()
+            self.not_found_json_page = _html.read()
 
         self.not_found_response = YAMockResponse(
             status_code=200,
-            content=self.not_found_page,
+            content=self.not_found_json_page,
             headers={
-                "content-length": str(len(self.not_found_page)),
+                "content-length": str(len(self.not_found_json_page)),
                 "content-type": "text/html",
                 "last-modified": "Tue, 4 Jul 2023 18:01:01 GMT",
             },
         )
+
+        with open(
+            os.path.join(
+                TESTS_ROOT_EXAMPLES_SCOTUS, "scotus_PDF_not_found.html"
+            ),
+            "rb",
+        ) as _html1:
+            self.not_found_pdf_page = _html1.read()
+
+        self.not_found_pdf_response = YAMockResponse(
+            status_code=200,
+            content=self.not_found_pdf_page,
+            headers={
+                "content-length": str(len(self.not_found_pdf_page)),
+                "content-type": "text/html",
+                "last-modified": "Tue, 4 Jul 2023 18:01:01 GMT",
+            },
+        )
+
         # TODO: mock the ConnectionError
         # self.nre = clients.NameResolutionError
         # self.ce = clients.ConnectionError
@@ -104,7 +123,7 @@ class ScotusClientTest(unittest.TestCase):
 
     def test_not_found_regex(self):
         """Search example 'Not Found' page"""
-        nfp_text = self.not_found_page.decode()
+        nfp_text = self.not_found_json_page.decode()
         valid_text = self.valid_docket.decode()
         self.assertTrue(clients.not_found_regex.search(nfp_text))
         self.assertFalse(clients.not_found_regex.search(valid_text))
@@ -112,6 +131,9 @@ class ScotusClientTest(unittest.TestCase):
     def test_not_found_test(self):
         """Test example 'Not Found' page text"""
         self.assertTrue(clients._not_found_test(self.not_found_response.text))
+        self.assertTrue(
+            clients._not_found_test(self.not_found_pdf_response.text)
+        )
         are_false = (
             self.docket_response,
             self.code304_response,
@@ -124,6 +146,7 @@ class ScotusClientTest(unittest.TestCase):
     def test_is_not_found_page(self):
         """Test example 'Not Found' page text in Response"""
         self.assertTrue(clients.is_not_found_page(self.not_found_response))
+        self.assertTrue(clients.is_not_found_page(self.not_found_pdf_response))
         are_false = (
             self.docket_response,
             self.code304_response,
